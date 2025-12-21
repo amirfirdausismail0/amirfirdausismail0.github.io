@@ -190,12 +190,21 @@ onValue(students_reference, (snapshot) => {
     for (let i = 0; i < students.length; i++) {
 
         if(students[i].attendance == 'present') {
+            
             total_present++;
+            
+            list_students = list_students + '<li class="list-group-item list-group-item-success">' + students[i].name + '\t===> is ' + students[i].attendance + '</li>';
+            
         } else if(students[i].attendance == 'absent') {
+
             total_absent++;
+
+            list_students = list_students + '<li class="list-group-item list-group-item-danger">' + students[i].name + '\t===> is ' + students[i].attendance + '</li>';
+
         }
 
-        list_students = list_students + '<li class="list-group-item">' + students[i].name + '\t===> is ' + students[i].attendance + '</li>';
+        // list_students = list_students + '<li class="list-group-item">' + students[i].name + '\t===> is ' + students[i].attendance + '</li>';
+
         // console.log(list_students);
 
     }
