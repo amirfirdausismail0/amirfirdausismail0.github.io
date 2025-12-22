@@ -1,6 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref, set, push, query, limitToLast } from "firebase/database";
 
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+
 const firebaseConfig = {
   apiKey: "AIzaSyBjbzbTm00LCU_c03O-ijwn-SH_I1NLoWI",
   authDomain: "amir-dua.firebaseapp.com",
@@ -29,6 +31,36 @@ const db = getDatabase();
 //         content: content
 //     });
 // }
+
+///////////////////////////////////////AUTH//////////////////////////////////////////////////////
+
+const provider = new GoogleAuthProvider();
+
+const auth = getAuth();
+signInWithPopup(auth, provider)
+  .then((result) => {
+    // This gives you a Google Access Token. You can use it to access the Google API.
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const token = credential.accessToken;
+    // The signed-in user info.
+    const user = result.user;
+    console.log(user)
+    // IdP data available using getAdditionalUserInfo(result)
+    // ...
+  }).catch((error) => {
+    // Handle Errors here.
+    const errorCode = error.code;
+    console.log(errorCode)
+    const errorMessage = error.message;
+    console.log(errorMessage)
+    // The email of the user's account used.
+    const email = error.customData.email;
+    console.log(email)
+    // The AuthCredential type that was used.
+    const credential = GoogleAuthProvider.credentialFromError(error);
+    console.log(credential)
+    // ...
+  });
 
 //////////////////////////////////GET TEMPERATURE/////////////////////////////////////////
 
