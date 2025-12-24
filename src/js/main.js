@@ -60,7 +60,7 @@ signInWithPopup(auth, provider)
     const credential = GoogleAuthProvider.credentialFromError(error);
     console.log(credential)
     // ...
-  });
+});
 
 //////////////////////////////////GET TEMPERATURE/////////////////////////////////////////
 
