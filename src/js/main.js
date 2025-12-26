@@ -1,8 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref, set, push, query, limitToLast } from "firebase/database";
 
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-
 const firebaseConfig = {
   apiKey: "AIzaSyBjbzbTm00LCU_c03O-ijwn-SH_I1NLoWI",
   authDomain: "amir-dua.firebaseapp.com",
