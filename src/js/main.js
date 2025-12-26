@@ -2,13 +2,13 @@ import { initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref, set, push, query, limitToLast } from "firebase/database";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBjbzbTm00LCU_c03O-ijwn-SH_I1NLoWI",
-  authDomain: "amir-dua.firebaseapp.com",
-  projectId: "amir-dua",
-  storageBucket: "amir-dua.firebasestorage.app",
-  messagingSenderId: "226472608402",
-  appId: "1:226472608402:web:315ce5eca8a1305ea81c4b",
-  databaseURL: "https://amir-dua-default-rtdb.asia-southeast1.firebasedatabase.app"
+    apiKey: "AIzaSyC9CqjVBCcmjeYAZdX3grW213s2jyMHpAw",
+    authDomain: "g40attendance.firebaseapp.com",
+    databaseURL: "https://g40attendance-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "g40attendance",
+    storageBucket: "g40attendance.firebasestorage.app",
+    messagingSenderId: "487009872314",
+    appId: "1:487009872314:web:9842ea3115be17e5505583"
 };
 
 initializeApp(firebaseConfig);
