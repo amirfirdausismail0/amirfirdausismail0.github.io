@@ -45,11 +45,6 @@ const monitor_reference = ref(db, 'monitor/');
 
 onValue(monitor_reference, (snapshot) => {
 
-    let temperature = '';
-    let humidity = '';
-    let co2 = '';
-    let light = '';
-
     // snapshot.forEach((childSnapshot) => {
 
     //     const childKey = childSnapshot.key;
@@ -70,7 +65,6 @@ onValue(monitor_reference, (snapshot) => {
 
     // });
 
-    console.log(snapshot.val());
     let my_object = snapshot.val();
 
     temperature_text.innerHTML = my_object.temp + '°C';
