@@ -38,6 +38,7 @@ const temperature_text = document.getElementById('temperature_text');
 const humidity_text = document.getElementById('humidity_text');
 const co2_text = document.getElementById('co2_text');
 const light_text = document.getElementById('light_text');
+const last_updated_text = document.getElementById('last_updated');
 
 const monitor_reference = ref(db, 'monitor/');
 
@@ -71,6 +72,7 @@ onValue(monitor_reference, (snapshot) => {
     humidity_text.innerHTML = my_object.humidity + '%';
     co2_text.innerHTML = my_object.air_quality;
     light_text.innerHTML = my_object.light_raw;
+    last_updated_text.innerHTML = my_object.last_update;
 
 });
 // , {
