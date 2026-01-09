@@ -40,7 +40,7 @@ const co2_text = document.getElementById('co2_text');
 const light_text = document.getElementById('light_text');
 const last_updated_text = document.getElementById('last_updated');
 
-const monitor_reference = ref(db, 'monitor/');
+const monitor_reference = ref(db, 'Classroom/Status/');
 
 // const recentTempRef = query(temperature_reference, limitToLast(1));
 
@@ -68,11 +68,11 @@ onValue(monitor_reference, (snapshot) => {
 
     let my_object = snapshot.val();
 
-    temperature_text.innerHTML = my_object.temp + '°C';
+    temperature_text.innerHTML = my_object.temperature + '°C';
     humidity_text.innerHTML = my_object.humidity + '%';
     co2_text.innerHTML = my_object.air_quality;
-    light_text.innerHTML = my_object.light_raw;
-    last_updated_text.innerHTML = my_object.last_update;
+    light_text.innerHTML = my_object.lighting;
+    last_updated_text.innerHTML = my_object.updated;
 
 });
 // , {
