@@ -1,9 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// ==========================================
-// 1. FIREBASE CONFIGURATION
-// ==========================================
+// ================= FIREBASE CONFIG =================
 const firebaseConfig = {
     apiKey: "AIzaSyD_htAAKN1dv7fsOkO0g8IxgQRsDuIiyu4",
     authDomain: "rfid-attendance-30745.firebaseapp.com",
@@ -15,93 +13,108 @@ const firebaseConfig = {
     measurementId: "G-XMZEQML8B9"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-// ==========================================
-// 2. DOM ELEMENTS SELECTION
-// ==========================================
-// Sensor Displays
+// ================= DOM ELEMENTS =================
 const tempElement = document.getElementById("temperature_text");
 const humElement = document.getElementById("humidity_text");
 const co2Element = document.getElementById("co2_text");
 const lightElement = document.getElementById("light_text");
 const updatedElement = document.getElementById("last_updated");
+const savedElement = document.getElementById("saved_text"); // NEW
 
-// Manual Control Switches
 const fanSwitch = document.getElementById("btn-fan");
 const lightSwitch = document.getElementById("btn-light");
+const ctx = document.getElementById('powerChart').getContext('2d'); // NEW
 
-// ==========================================
-// 3. LISTEN FOR SENSOR UPDATES (READ)
-// ==========================================
+// ================= CHART SETUP =================
+const powerChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Power (Watts)',
+            data: [],
+            borderColor: '#198754', // Green Color
+            backgroundColor: 'rgba(25, 135, 84, 0.1)',
+            borderWidth: 2,
+            tension: 0.3,
+            fill: true,
+            pointRadius: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: { display: false }, // Hide time labels to keep it clean
+            y: { beginAtZero: true, title: { display: true, text: 'Watts' } }
+        },
+        animation: { duration: 0 } // No animation for smoother real-time feel
+    }
+});
+
+function addDataToChart(chart, data) {
+    const now = new Date();
+    const timeLabel = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+    
+    chart.data.labels.push(timeLabel);
+    chart.data.datasets.forEach((dataset) => {
+        dataset.data.push(data);
+    });
+
+    // Keep last 30 readings
+    if (chart.data.labels.length > 30) {
+        chart.data.labels.shift();
+        chart.data.datasets.forEach((dataset) => {
+            dataset.data.shift();
+        });
+    }
+    chart.update();
+}
+
+// ================= LISTEN FOR UPDATES =================
 const statusRef = ref(database, 'Classroom/Status/');
 
 onValue(statusRef, (snapshot) => {
     const data = snapshot.val();
     
     if (data) {
-        // Update HTML with sensor data (use "--" if data is missing)
+        // 1. Update Standard Sensors
         tempElement.innerHTML = (data.temperature !== undefined ? data.temperature : "--") + "°C";
         humElement.innerHTML = (data.humidity !== undefined ? data.humidity : "--") + "%";
         co2Element.innerHTML = (data.air_quality !== undefined ? data.air_quality : "--");
         lightElement.innerHTML = (data.lighting !== undefined ? data.lighting : "--");
         updatedElement.innerHTML = data.updated || "Unknown";
-    } else {
-        console.log("No sensor data found.");
+
+        // 2. Update Power Chart
+        const powerVal = data.power !== undefined ? data.power : 0;
+        addDataToChart(powerChart, powerVal);
+
+        // 3. Update Savings Text
+        if (data.energy_saved !== undefined) {
+            savedElement.innerText = parseFloat(data.energy_saved).toFixed(4) + " Wh";
+        }
     }
-}, (error) => {
-    console.error("Error reading sensor data:", error);
 });
 
-// ==========================================
-// 4. LISTEN FOR CONTROL STATE (SYNC)
-// ==========================================
-// This ensures that if you refresh the page, the buttons show the correct state
+// ================= CONTROL SYNC =================
 const controlRef = ref(database, 'Classroom/Control/');
-
 onValue(controlRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        // Sync button positions with Firebase data
-        // If 'fan' is true, switch is checked. If false/null, unchecked.
         if (fanSwitch) fanSwitch.checked = (data.fan === true);
         if (lightSwitch) lightSwitch.checked = (data.light === true);
     }
 });
 
-// ==========================================
-// 5. HANDLE BUTTON CLICKS (WRITE)
-// ==========================================
-// Fan Switch Logic
+// ================= BUTTON HANDLERS =================
 fanSwitch.addEventListener('change', (e) => {
-    const isChecked = e.target.checked;
-    
-    // Write true/false to Firebase
-    set(ref(database, 'Classroom/Control/fan'), isChecked)
-        .then(() => {
-            console.log("Fan override set to:", isChecked);
-        })
-        .catch((error) => {
-            console.error("Failed to set fan override:", error);
-            // Revert switch if update failed
-            e.target.checked = !isChecked;
-        });
+    set(ref(database, 'Classroom/Control/fan'), e.target.checked)
+        .catch((err) => { e.target.checked = !e.target.checked; });
 });
 
-// Light Switch Logic
 lightSwitch.addEventListener('change', (e) => {
-    const isChecked = e.target.checked;
-
-    // Write true/false to Firebase
-    set(ref(database, 'Classroom/Control/light'), isChecked)
-        .then(() => {
-            console.log("Light override set to:", isChecked);
-        })
-        .catch((error) => {
-            console.error("Failed to set light override:", error);
-            // Revert switch if update failed
-            e.target.checked = !isChecked;
-        });
+    set(ref(database, 'Classroom/Control/light'), e.target.checked)
+        .catch((err) => { e.target.checked = !e.target.checked; });
 });
