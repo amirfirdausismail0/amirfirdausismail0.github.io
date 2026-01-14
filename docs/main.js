@@ -1,11 +1,9 @@
 // ==========================================
 // 1. INITIALIZATION & SAFETY CHECK
 // ==========================================
-// We wait for the window to load to ensure libraries are ready
 window.addEventListener('DOMContentLoaded', () => {
     if (typeof firebase === 'undefined' || typeof Chart === 'undefined') {
-        console.error("CRITICAL ERROR: Libraries not loaded. Check your internet.");
-        alert("Error: Firebase or Chart.js failed to load. Please check your internet connection.");
+        console.error("CRITICAL ERROR: Libraries not loaded.");
         return;
     }
     startApp();
@@ -24,46 +22,42 @@ function startApp() {
         projectId: "rfid-attendance-30745",
         storageBucket: "rfid-attendance-30745.firebasestorage.app",
         messagingSenderId: "860028054162",
-        appId: "1:860028054162:web:f3b05e9a5c6733bae0944b",
-        measurementId: "G-XMZEQML8B9"
+        appId: "1:860028054162:web:f3b05e9a5c6733bae0944b"
     };
 
-    // Initialize Firebase (Compat Mode)
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
     // ==========================================
     // 3. DOM ELEMENTS
     // ==========================================
-    const tempElement = document.getElementById("temperature_text");
-    const humElement = document.getElementById("humidity_text");
-    const co2Element = document.getElementById("co2_text");
-    const lightElement = document.getElementById("light_text");
-    const updatedElement = document.getElementById("last_updated");
-    
-    const savedElement = document.getElementById("saved_text");
-    const usedElement = document.getElementById("used_text");
-    
-    const fanSwitch = document.getElementById("btn-fan");
-    const lightSwitch = document.getElementById("btn-light");
+    const els = {
+        temp: document.getElementById("temperature_text"),
+        hum: document.getElementById("humidity_text"),
+        co2: document.getElementById("co2_text"),
+        light: document.getElementById("light_text"),
+        updated: document.getElementById("last_updated"),
+        saved: document.getElementById("saved_text"),
+        used: document.getElementById("used_text"),
+        fanSwitch: document.getElementById("btn-fan"),
+        lightSwitch: document.getElementById("btn-light"),
+        ctx: document.getElementById('energyBarChart').getContext('2d')
+    };
 
     // ==========================================
     // 4. CHART SETUP (HOURLY ENERGY)
     // ==========================================
-    const ctx = document.getElementById('energyBarChart').getContext('2d');
-    
-    const energyBarChart = new Chart(ctx, {
+    const energyBarChart = new Chart(els.ctx, {
         type: 'bar',
         data: {
-            labels: ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", 
-                     "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
+            // Hours 00 to 23
+            labels: Array.from({length: 24}, (_, i) => i.toString().padStart(2, '0')), 
             datasets: [{
                 label: 'Energy (Wh)',
                 data: new Array(24).fill(0),
-                backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-                borderRadius: 4
+                backgroundColor: '#0d6efd', // Bootstrap Primary Blue
+                borderRadius: 4,
+                barPercentage: 0.6
             }]
         },
         options: {
@@ -72,12 +66,12 @@ function startApp() {
             plugins: { legend: { display: false } },
             scales: {
                 y: { beginAtZero: true, title: { display: true, text: 'Wh' } },
-                x: { title: { display: true, text: 'Hour' }, grid: { display: false } }
+                x: { grid: { display: false } }
             }
         }
     });
 
-    // Helper: Get Today's Date String
+    // Helper: Get Today's Date String (YYYY-MM-DD) matching ESP32 format
     function getTodayDateString() {
         const now = new Date();
         const yyyy = now.getFullYear();
@@ -94,25 +88,16 @@ function startApp() {
     statusRef.on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            // Update Sensor Cards
-            if (tempElement) tempElement.innerText = (data.temperature !== undefined ? data.temperature : "--") + "°C";
-            if (humElement) humElement.innerText = (data.humidity !== undefined ? data.humidity : "--") + "%";
-            if (co2Element) co2Element.innerText = (data.air_quality !== undefined ? data.air_quality : "--");
-            if (lightElement) lightElement.innerText = (data.lighting !== undefined ? data.lighting : "--");
-            if (updatedElement) updatedElement.innerText = data.updated || "Unknown";
-
-            // Update Eco Tracker
-            if (data.energy_saved !== undefined && savedElement) {
-                savedElement.innerText = parseFloat(data.energy_saved).toFixed(2);
-            }
-            if (data.energy_used !== undefined && usedElement) {
-                usedElement.innerText = parseFloat(data.energy_used).toFixed(2) + " Wh";
-            }
+            if (els.temp) els.temp.innerText = (data.temperature ? data.temperature.toFixed(1) : "--") + "°C";
+            if (els.hum) els.hum.innerText = (data.humidity ? data.humidity.toFixed(1) : "--") + "%";
+            if (els.co2) els.co2.innerText = (data.air_quality || "--");
+            if (els.light) els.light.innerText = (data.lighting || "--");
+            if (els.updated) els.updated.innerText = data.updated || "--";
         }
     });
 
     // ==========================================
-    // 6. GRAPH HISTORY UPDATES
+    // 6. ENERGY HISTORY (GRAPH & TOTALS)
     // ==========================================
     const todayStr = getTodayDateString();
     const historyRef = database.ref('Classroom/EnergyHistory/' + todayStr);
@@ -120,20 +105,33 @@ function startApp() {
     historyRef.on('value', (snapshot) => {
         const data = snapshot.val();
         const hourlyTotals = new Array(24).fill(0);
+        let totalDailyWh = 0.0;
 
         if (data) {
+            // Loop through all 10-minute uploads
             Object.values(data).forEach(log => {
-                if (log.time && log.wh) {
-                    // Extract Hour from "14:30:00" -> 14
-                    const hourIndex = parseInt(log.time.split(':')[0]);
-                    if (hourIndex >= 0 && hourIndex < 24) {
-                        hourlyTotals[hourIndex] += parseFloat(log.wh);
+                if (log.wh) {
+                    const val = parseFloat(log.wh);
+                    totalDailyWh += val;
+
+                    // Bin into hours for the chart
+                    if (log.time) {
+                        const hour = parseInt(log.time.split(':')[0]);
+                        if (hour >= 0 && hour < 24) hourlyTotals[hour] += val;
                     }
                 }
             });
         }
         
-        // Update Chart
+        // A. Update Big "Eco" Numbers
+        if (els.used) els.used.innerText = totalDailyWh.toFixed(2) + " Wh";
+        
+        // Calculate "Saved" (Example: 30% of total)
+        // Adjust the math below if you have a specific formula
+        const savedValue = totalDailyWh * 0.30; 
+        if (els.saved) els.saved.innerText = savedValue.toFixed(2);
+
+        // B. Update Chart
         energyBarChart.data.datasets[0].data = hourlyTotals;
         energyBarChart.update();
     });
@@ -143,33 +141,24 @@ function startApp() {
     // ==========================================
     const controlRef = database.ref('Classroom/Control/');
 
-    // READ (Sync switch position)
+    // READ (Sync switch state)
     controlRef.on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            if (fanSwitch) fanSwitch.checked = (data.fan === true);
-            if (lightSwitch) lightSwitch.checked = (data.light === true);
+            if (els.fanSwitch) els.fanSwitch.checked = (data.fan === true);
+            if (els.lightSwitch) els.lightSwitch.checked = (data.light === true);
         }
     });
 
     // WRITE (Send command)
-    if (fanSwitch) {
-        fanSwitch.addEventListener('change', (e) => {
-            controlRef.update({ fan: e.target.checked })
-                .catch((err) => { 
-                    console.error(err); 
-                    e.target.checked = !e.target.checked; // Revert if fail
-                });
-        });
+    function toggleDevice(device, state) {
+        controlRef.update({ [device]: state }).catch(console.error);
     }
 
-    if (lightSwitch) {
-        lightSwitch.addEventListener('change', (e) => {
-            controlRef.update({ light: e.target.checked })
-                .catch((err) => { 
-                    console.error(err); 
-                    e.target.checked = !e.target.checked; // Revert if fail
-                });
-        });
+    if (els.fanSwitch) {
+        els.fanSwitch.addEventListener('change', (e) => toggleDevice('fan', e.target.checked));
+    }
+    if (els.lightSwitch) {
+        els.lightSwitch.addEventListener('change', (e) => toggleDevice('light', e.target.checked));
     }
 }
