@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Capstone Group 40 - Smart Classroom</title>
+    <title>IoT Smart Classroom Dashboard</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     
@@ -12,76 +12,84 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
-      body { background-color: #f8f9fa; }
-      .card { border: none; border-radius: 12px; }
+      body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+      .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+      .sensor-val { font-size: 2.2rem; font-weight: 700; }
+      
+      /* Toggle Switch Styling */
+      .form-check-input {
+          width: 3em; height: 1.5em; cursor: pointer;
+      }
     </style>
   </head>
-  <body>
+  <body class="pb-5">
     
-    <div class="card text-center mb-4 rounded-0 shadow-sm bg-white">
-      <div class="card-body py-4">
-        <h3 class="fw-bold text-primary">IoT-Based Smart Classroom</h3>
+    <div class="bg-white py-4 mb-4 shadow-sm text-center">
+        <h2 class="fw-bold text-primary mb-1">IoT-Based Smart Classroom</h2>
         <p class="text-muted mb-0">Environmental Monitoring & Energy Dashboard</p>
-      </div>
     </div>
 
     <div class="container">
       
-      <div class="row row-cols-2 row-cols-md-4 g-3 text-center mb-4">
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mb-4 text-center">
           <div class="col">
-            <div class="card h-100 shadow-sm p-3">
-              <h6 class="text-muted small text-uppercase">Temperature</h6>
-              <h2 id="temperature_text" class="fw-bold text-danger mb-0">--°C</h2>
+            <div class="card h-100 py-3">
+              <h6 class="text-muted text-uppercase small">Temperature</h6>
+              <div class="sensor-val text-danger" id="temperature_text">--°C</div>
             </div>
           </div>
           <div class="col">
-            <div class="card h-100 shadow-sm p-3">
-              <h6 class="text-muted small text-uppercase">Humidity</h6>
-              <h2 id="humidity_text" class="fw-bold text-primary mb-0">--%</h2>
+            <div class="card h-100 py-3">
+              <h6 class="text-muted text-uppercase small">Humidity</h6>
+              <div class="sensor-val text-primary" id="humidity_text">--%</div>
             </div>
           </div>
           <div class="col">
-            <div class="card h-100 shadow-sm p-3">
-              <h6 class="text-muted small text-uppercase">Light Level</h6>
-              <h2 id="light_text" class="fw-bold text-warning mb-0">--</h2>
+            <div class="card h-100 py-3">
+              <h6 class="text-muted text-uppercase small">Light Level</h6>
+              <div class="sensor-val text-warning" id="light_text">--</div>
             </div>
           </div>
           <div class="col">
-            <div class="card h-100 shadow-sm p-3">
-              <h6 class="text-muted small text-uppercase">Air Quality</h6>
-              <h2 id="co2_text" class="fw-bold text-secondary mb-0">--</h2>
+            <div class="card h-100 py-3">
+              <h6 class="text-muted text-uppercase small">Air Quality</h6>
+              <div class="sensor-val text-secondary" id="co2_text">--</div>
             </div>
           </div>
       </div>
 
-      <div class="row mb-4">
-        <div class="col-12 col-lg-8 mb-3">
-          <div class="card shadow-sm h-100">
+      <div class="row g-4 mb-4">
+        
+        <div class="col-12 col-lg-8">
+          <div class="card h-100">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
               <h5 class="mb-0 fw-bold text-secondary">Hourly Energy Consumption</h5>
               <span class="badge bg-primary">Today</span>
             </div>
-           <div class="card-body">
-  <div style="position: relative; height: 300px; width: 100%;">
-      <canvas id="energyBarChart"></canvas>
-  </div>
-</div>
+            <div class="card-body">
+               <div style="height: 300px; width: 100%;">
+                  <canvas id="energyBarChart"></canvas>
+               </div>
+            </div>
           </div>
         </div>
 
-        <div class="col-12 col-lg-4 mb-3">
-          <div class="card border-success h-100 shadow-sm">
-            <div class="card-header bg-success text-white fw-bold text-center">
+        <div class="col-12 col-lg-4">
+          <div class="card h-100 border-success">
+            <div class="card-header bg-success text-white fw-bold text-center py-3">
               Eco-Efficiency Tracker
             </div>
             <div class="card-body text-center d-flex flex-column justify-content-center">
-              <h6 class="text-success text-uppercase">Total Energy Saved</h6>
-              <h1 class="display-3 fw-bold my-2" id="saved_text">0.00</h1>
+              <h6 class="text-success text-uppercase fw-bold mt-3">Total Energy Saved</h6>
+              
+              <h1 class="display-3 fw-bold text-dark my-2" id="saved_text">0.00</h1>
               <span class="fs-5 text-muted">Watt-hours (Wh)</span>
-              <hr>
-              <div class="d-flex justify-content-between px-3">
-                <small class="text-muted">Actual Usage:</small>
-                <small class="fw-bold" id="used_text">0.00 Wh</small>
+              
+              <hr class="my-4 text-secondary opacity-25">
+              
+              <div class="d-flex justify-content-between px-3 mb-2">
+                <span class="text-muted">Actual Usage:</span>
+                <span class="fw-bold text-dark" id="used_text">0.00 Wh</span>
               </div>
             </div>
           </div>
@@ -90,40 +98,43 @@
 
       <div class="row justify-content-center mb-5">
         <div class="col-12 col-md-8 col-lg-6">
-          <div class="card shadow-sm">
+          <div class="card border-primary">
             <div class="card-header bg-primary text-white text-center py-3">
-              <h5 class="mb-0">Manual Control Panel</h5>
+              <h5 class="mb-0 fw-bold">Manual Control Panel</h5>
             </div>
             <div class="card-body p-4">
+              
               <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                   <h6 class="fw-bold mb-0">Fan Override</h6>
                   <small class="text-muted">Force Fan ON</small>
                 </div>
                 <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="btn-fan" style="transform: scale(1.6); cursor: pointer;">
+                  <input class="form-check-input" type="checkbox" id="btn-fan">
                 </div>
               </div>
+
               <hr class="text-secondary opacity-25">
+
               <div class="d-flex justify-content-between align-items-center mt-4">
                 <div>
                   <h6 class="fw-bold mb-0">Light Override</h6>
                   <small class="text-muted">Force Lamp ON</small>
                 </div>
                 <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" id="btn-light" style="transform: scale(1.6); cursor: pointer;">
+                  <input class="form-check-input" type="checkbox" id="btn-light">
                 </div>
               </div>
+
             </div>
           </div>
         </div>
       </div>
       
-      <div class="text-center pt-3 pb-5">
+      <div class="text-center pt-3">
         <p class="h6 text-muted mb-4">
             Last updated: <span id="last_updated" class="fw-bold text-dark">--</span>
         </p>
-        
         <a href="https://dandan-03.github.io/attendance-system/index.html" 
            class="btn btn-outline-primary px-4 py-2">
            Go to Attendance System
